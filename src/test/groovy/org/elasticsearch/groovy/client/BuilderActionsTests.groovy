@@ -17,10 +17,11 @@
  * under the License.
  */
 
-package org.elasticsearch.groovy.test.client
+package org.elasticsearch.groovy.client
 
-import org.elasticsearch.groovy.node.GNode
-import org.elasticsearch.groovy.node.GNodeBuilder
+import org.elasticsearch.node.Node
+import org.elasticsearch.node.NodeBuilder
+
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -34,11 +35,11 @@ import static org.hamcrest.Matchers.equalTo
 
 class BuilderActionsTests {
 
-    def GNode node
+    def Node node
 
     @Before
     public void startNode() {
-        GNodeBuilder nodeBuilder = new GNodeBuilder()
+        NodeBuilder nodeBuilder = new NodeBuilder()
         nodeBuilder.settings {
             node {
                 local = true
@@ -64,7 +65,7 @@ class BuilderActionsTests {
                 value1 = 'value1'
                 value2 = 'value2'
             }
-        }).gexecute()
+        }).execute()
 
         assertThat indexR.response.index, equalTo('test')
         assertThat indexR.response.type, equalTo('type1')
@@ -81,17 +82,17 @@ class BuilderActionsTests {
             }
         }
 
-        def countR = node.client.prepareCount('test').setSource(theQuery).gexecute()
+        def countR = node.client.prepareCount('test').setSource(theQuery).execute()
 
         assertThat countR.response.count, equalTo(1l)
 
         def searchR = node.client.prepareSearch('test').setQuery({
             term(test: 'value')
-        }).gexecute()
+        }).execute()
 
         assertThat searchR.response.hits.totalHits, equalTo(1l)
 
-        def delete = node.client.prepareDelete('test', 'type1', '1').gexecute()
+        def delete = node.client.prepareDelete('test', 'type1', '1').execute()
         assertThat delete.response.index, equalTo('test')
         assertThat delete.response.type, equalTo('type1')
         assertThat delete.response.id, equalTo('1')
@@ -99,7 +100,7 @@ class BuilderActionsTests {
         def refresh = node.client.admin.indices.refresh {}
         assertThat refresh.response.failedShards, equalTo(0)
 
-        def get = node.client.prepareGet('test', 'type1', '1').gexecute()
+        def get = node.client.prepareGet('test', 'type1', '1').execute()
         assertThat get.response.exists, equalTo(false)
     }
 }

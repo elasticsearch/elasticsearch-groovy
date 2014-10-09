@@ -1,3 +1,5 @@
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder
+
 /*
  * Licensed to Elasticsearch under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -17,32 +19,13 @@
  * under the License.
  */
 
-//@Grapes([
-//    @Grab(group = 'org.elasticsearch', module = 'elasticsearch-groovy', version = '0.7.0-SNAPSHOT'),
-//    @Grab(group = 'org.slf4j', module = 'slf4j-simple', version = '1.5.8')
-///*    @Grab(group = 'org.slf4j', module = 'slf4j-log4j12', version = '1.5.8')*/
-//])
-
-def startNode() {
-    def nodeBuilder = new org.elasticsearch.groovy.node.GNodeBuilder()
-    nodeBuilder.settings {
-        node {
-            client = true
-        }
-    }
-    nodeBuilder.node()
-}
-
-
-def node = startNode()
+def node = nodeBuilder().local(true).node()
 
 println "settings $node.settings.asMap"
 
-println "Node started"
-
-future = node.client.index {
+def future = node.client.index {
     index "twitter"
-    lang "tweet"
+    type "tweet"
     id "1"
     source {
         user = "kimchy"

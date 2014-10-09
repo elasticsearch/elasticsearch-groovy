@@ -16,56 +16,48 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.elasticsearch.groovy.node
 
-import org.elasticsearch.groovy.client.GClient
+import com.carrotsearch.randomizedtesting.RandomizedTest
 
+import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.node.Node
 
+import org.junit.Test
+
+import static org.mockito.Mockito.mock
+import static org.mockito.Mockito.verifyZeroInteractions
+import static org.mockito.Mockito.when
+
 /**
- *
+ * Tests {@link NodeExtensions}.
  */
-class GNode {
+class NodeExtensionsTests extends RandomizedTest {
+    /**
+     * Mock {@link Node} to ensure functionality.
+     */
+    private final Node node = mock(Node)
 
-    final Node node
+    @Test
+    void testGetSettings() {
+        Settings settings = mock(Settings)
 
-    final GClient client
+        when(node.settings()).thenReturn(settings)
 
-    GNode(Node node) {
-        this.node = node
-        this.client = new GClient(node.client())
+        assert NodeExtensions.getSettings(node) == settings
+
+        verifyZeroInteractions(settings)
     }
 
-    /**
-     * The settings that were used to create the node.
-     */
-    Settings getSettings() {
-        node.settings()
-    }
+    @Test
+    void testGetClient() {
+        Client client = mock(Client)
 
-    /**
-     * Start the node. If the node is already started, this method is no-op.
-     */
-    GNode start() {
-        node.start()
-        this
-    }
+        when(node.client()).thenReturn(client)
 
-    /**
-     * Stops the node. If the node is already started, this method is no-op.
-     */
-    GNode stop() {
-        node.stop()
-        this
-    }
+        assert NodeExtensions.getClient(node) == client
 
-    /**
-     * Closes the node (and {@link #stop}s if it's running).
-     */
-    GNode close() {
-        node.close()
-        this
+        verifyZeroInteractions(client)
     }
 }

@@ -17,10 +17,11 @@
  * under the License.
  */
 
-package org.elasticsearch.groovy.test.client
+package org.elasticsearch.groovy.client
 
-import org.elasticsearch.groovy.node.GNode
-import org.elasticsearch.groovy.node.GNodeBuilder
+import org.elasticsearch.node.Node
+import org.elasticsearch.node.NodeBuilder
+
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -33,11 +34,11 @@ import static org.hamcrest.Matchers.equalTo
  */
 class SimpleActionsTests {
 
-    def GNode node
+    def Node node
 
     @Before
     public void startNode() {
-        GNodeBuilder nodeBuilder = new GNodeBuilder()
+        NodeBuilder nodeBuilder = new NodeBuilder()
         nodeBuilder.settings {
             node {
                 local = true
@@ -57,11 +58,6 @@ class SimpleActionsTests {
 
     @Test
     void testSimpleOperations() {
-        def value1 = new org.elasticsearch.groovy.common.xcontent.GXContentBuilder().buildAsString {
-            something = 'test'
-        }
-        println value1
-
         def indexR = node.client.index {
             index 'test'
             type 'type1'
@@ -87,11 +83,10 @@ class SimpleActionsTests {
         assertThat delete.response.type, equalTo('type1')
         assertThat delete.response.id, equalTo('1')
 
-        def refresh = node.client.admin.indices.refresh {}
+        def refresh = node.client.admin().indices().refresh {}
         assertThat refresh.response.failedShards, equalTo(0)
 
-        def get = node.client.get {
-            index 'test'
+        def get = node.client.get('test') {
             type 'type1'
             id '1'
         }
@@ -113,7 +108,7 @@ class SimpleActionsTests {
         assertThat indexR.response.type, equalTo('type1')
         assertThat indexR.response.id, equalTo('1')
 
-        refresh = node.client.admin.indices.refresh {}
+        refresh = node.client.admin().indices().refresh {}
         assertThat refresh.response.failedShards, equalTo(0)
 
         def theQuery = new org.elasticsearch.groovy.common.xcontent.GXContentBuilder().buildAsBytes {
@@ -157,14 +152,13 @@ class SimpleActionsTests {
         assertThat updateR.response.type, equalTo('type1')
         assertThat updateR.response.id, equalTo('1')
 
-        get = node.client.get {
-            index 'test'
+        get = node.client.get('test') {
             type 'type1'
             id '1'
         }
         assertThat get.response.source['test'], equalTo('new value')
 
-        refresh = node.client.admin.indices.refresh {}
+        refresh = node.client.admin().indices().refresh {}
         assertThat refresh.response.failedShards, equalTo(0)
 
         search = node.client.search {
@@ -188,17 +182,16 @@ class SimpleActionsTests {
             }
         }
 
-        def deleteByQuery = node.client.deleteByQuery {
+        def deleteByQuery = node.client().deleteByQuery {
             indices 'test'
             source deleteByQueryQuery
         }
         assertThat deleteByQuery.response.indices.test.failedShards, equalTo(0)
 
-        refresh = node.client.admin.indices.refresh {}
+        refresh = node.client.admin().indices().refresh {}
         assertThat refresh.response.failedShards, equalTo(0)
 
-        get = node.client.get {
-            index 'test'
+        get = node.client.get('test') {
             type 'type1'
             id '1'
         }

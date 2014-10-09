@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package org.elasticsearch.groovy.test.client
+package org.elasticsearch.groovy.client
 
+import org.elasticsearch.node.Node
+import org.elasticsearch.node.NodeBuilder
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.action.index.IndexResponse
-import org.elasticsearch.groovy.node.GNode
-import org.elasticsearch.groovy.node.GNodeBuilder
+
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
 import java.util.concurrent.CountDownLatch
 
-import static org.elasticsearch.client.Requests.indexRequest
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.hamcrest.Matchers.equalTo
 
@@ -38,11 +38,11 @@ import static org.hamcrest.Matchers.equalTo
  */
 class DifferentApiExecutionTests {
 
-    def GNode node
+    def Node node
 
     @Before
     public void startNode() {
-        GNodeBuilder nodeBuilder = new GNodeBuilder()
+        NodeBuilder nodeBuilder = new NodeBuilder()
         nodeBuilder.settings {
             node {
                 local = true
@@ -60,7 +60,7 @@ class DifferentApiExecutionTests {
         node.close()
     }
 
-    @Test
+    @Test(timeout = 120000L)
     void verifyDifferentApiExecutions() {
         def response = node.client.index(new IndexRequest(
                 index: 'test',
@@ -73,19 +73,19 @@ class DifferentApiExecutionTests {
                         value2 = 'value2'
                     }
                 })).response
-        assertThat response.index, equalTo('test')
-        assertThat response.type, equalTo('type1')
-        assertThat response.id, equalTo('1')
+
+        assert response.index == 'test'
+        assert response.type == 'type1'
+        assert response.id == '1'
 
         def refresh = node.client.admin.indices.refresh {}
-        assertThat 0, equalTo(refresh.response.failedShards)
+        assert refresh.response.failedShards == 0
 
-        def getR = node.client.get {
-            index 'test'
+        def getR = node.client.get('test') {
             type 'type1'
             id '1'
         }
-        assertThat getR.response.exists, equalTo(true)
+        assert getR.response.exists
         assertThat getR.response.index, equalTo('test')
         assertThat getR.response.type, equalTo('type1')
         assertThat getR.response.id, equalTo('1')
@@ -93,7 +93,7 @@ class DifferentApiExecutionTests {
         assertThat getR.response.source.test, equalTo('value')
         assertThat getR.response.source.complex.value1, equalTo('value1')
 
-        response = node.client.index({
+        response = node.client.index {
             index = 'test'
             type = 'type1'
             id = '1'
@@ -104,12 +104,13 @@ class DifferentApiExecutionTests {
                     value2 = 'value2'
                 }
             }
-        }).response
+        }.response
+
         assertThat response.index, equalTo('test')
         assertThat response.type, equalTo('type1')
         assertThat response.id, equalTo('1')
 
-        def indexR = node.client.index(indexRequest().with {
+        def indexR = node.client().index {
             index 'test'
             type 'type1'
             id '1'
@@ -120,12 +121,16 @@ class DifferentApiExecutionTests {
                     value2 = 'value2'
                 }
             }
-        })
+        }
+
         CountDownLatch latch = new CountDownLatch(1)
-        indexR.success = { IndexResponse responseX ->
-            assertThat responseX.index, equalTo('test')
+
+        response = indexR.response
+
+        indexR.onResponse { IndexResponse responseX ->
             assertThat indexR.response.index, equalTo('test')
-            assertThat responseX.type, equalTo('type1')
+            assertThat indexR.response.index, equalTo('test')
+            assertThat indexR.response.type, equalTo('type1')
             assertThat indexR.response.type, equalTo('type1')
             assertThat response.id, equalTo('1')
             assertThat indexR.response.id, equalTo('1')
@@ -133,7 +138,7 @@ class DifferentApiExecutionTests {
         }
         latch.await()
 
-        indexR = node.client.index {
+        indexR = node.client().index {
             index 'test'
             type 'type1'
             id '1'
@@ -145,8 +150,10 @@ class DifferentApiExecutionTests {
                 }
             }
         }
+
         latch = new CountDownLatch(1)
-        indexR.listener = {
+
+        indexR.addListener {
             assertThat indexR.response.index, equalTo('test')
             assertThat indexR.response.type, equalTo('type1')
             assertThat indexR.response.id, equalTo('1')
