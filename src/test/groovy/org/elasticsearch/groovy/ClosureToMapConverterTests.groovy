@@ -69,7 +69,8 @@ class ClosureToMapConverterTests extends AbstractElasticsearchTestCase {
         mapClosure {
             // Note: You define 'x' to be an int
             x = randomInt()
-            // Now we try to define 'x.y.z', but
+            // Now we try to define 'x.y.z', but 'x' already exists so it gets returned; then it tries to find 'y' as
+            //  a property of 'x', which won't exist
             x.y.z = randomInt()
         }
     }

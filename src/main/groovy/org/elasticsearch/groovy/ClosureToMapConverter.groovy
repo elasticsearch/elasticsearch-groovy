@@ -316,18 +316,19 @@ class ClosureToMapConverter {
      * @param value The incoming parameter to convert if necessary ({@link Closure}s and {@link Collection}s)
      * @return {@code value} as-is unless it is a {@link Closure} or {@link Collection}. Otherwise the unraveled
      *         value of those objects.
-     * @throws IllegalArgumentException if you attempt to reuse a shorthand property on the right and side (e.g.,
+     * @throws IllegalArgumentException if you attempt to reuse a shorthand property on the right hand side (e.g.,
      *                                  "x.y.z = a; b = x.y.z;" where "x.y.z" is the shorthand property)
      */
     private Object convertValue(Object value) {
         Object ret = value
 
-        // avoid handling
+        // avoid handling shorthand assignments (technically we could check for this, then build the name here, but
+        //  this is a very bad code smell; just use a temporary variable!)
         if (value instanceof ClosureToMapConverter) {
             throw new IllegalArgumentException(
                     "value is a ClosureToMapConverter. This means that you are trying to reuse a shorthand " +
                     "property! (For example, { x.y.z = 123; a = x.y.z }. 'x.y.z' cannot be referenced on the right " +
-                    "hand side!)")
+                    "hand side! Use a temporary variable from outside the closure instead.)")
         }
         // enable nested objects
         else if (value instanceof Closure) {
